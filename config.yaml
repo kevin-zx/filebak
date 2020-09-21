@@ -1,0 +1,11 @@
+#app_name: filebak
+
+basedir: 'data/'
+
+tasks:
+  - name: 'xhs_spider'
+    rollingtype: 1
+    compress: TRUE
+  - name: 'xhs_spider2'
+    rollingtype: 2
+    compress: FALSE

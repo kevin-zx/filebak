@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package backup_rpc;
+
+message Data {
+    string data_type = 1;
+    int64 time = 2;
+    bytes data = 3;
+}
+
+message Error {
+    string info = 1;
+}
+
+message SaveRequest {
+    Data data = 1;
+    string task_name = 2;
+}
+
+message SaveResponse {
+    Error err = 1;
+}
+
+message CloseRequest {
+    string TaskName = 1;
+    string TypeName = 2;
+    int64 Time = 3;
+}
+message CloseResponse {
+    Error err = 1;
+}
+
+service BackupService {
+    rpc SaveData (stream SaveRequest) returns (SaveResponse) {
+    }
+    rpc CloseType (CloseRequest) returns (CloseResponse) {
+    }
+}
