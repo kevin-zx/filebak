@@ -6,6 +6,7 @@ import (
 	"filebak/pkg/infrastructure/filetool"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"sync"
@@ -26,7 +27,8 @@ func periodFlush(channel WriteChannel) {
 	}
 }
 
-var ExistErr = fmt.Errorf("file exist")
+// ErrExist 文件已经存在了，不能重复创建
+var ErrExist = fmt.Errorf("file exist")
 
 func NewGzipWriteChannel(fileName string) (WriteChannel, error) {
 	f, err := createChannelFile(fileName + ".gz")
@@ -48,7 +50,6 @@ func NewGzipWriteChannel(fileName string) (WriteChannel, error) {
 		fn:     fileName,
 		close:  false,
 	}
-	go periodFlush(gc)
 	return gc, nil
 }
 
@@ -89,17 +90,22 @@ func (g *gzipWriteChannel) Write(p []byte) (n int, err error) {
 func (g *gzipWriteChannel) Close() error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
+	log.Printf("fileName: %s close\n", g.fn)
 	g.close = true
-	_ = g.gzipW.Flush()
-	errInfo := ""
-	err1 := g.closer.Close()
-	if err1 != nil {
-		errInfo += err1.Error() + "\n"
+	fErr := g.gzipW.Flush()
+	if fErr != nil {
+		log.Printf("%+v\n", fErr)
 	}
+	errInfo := ""
 	err2 := g.gzipW.Close()
 	if err2 != nil {
 		errInfo += err2.Error() + "\n"
 	}
+	err1 := g.closer.Close()
+	if err1 != nil {
+		errInfo += err1.Error() + "\n"
+	}
+
 	if errInfo != "" {
 		return fmt.Errorf(errInfo)
 	}
@@ -113,7 +119,7 @@ func NewWriteChannel(fileName string) (WriteChannel, error) {
 	}
 	w := bufio.NewWriterSize(f, 4096*10)
 	wc := writeChannel{write: w, closer: f, fn: fileName}
-	go periodFlush(&wc)
+	//go periodFlush(&wc)
 	return &wc, nil
 }
 
@@ -167,7 +173,7 @@ func existJudge(fileName string) error {
 		return err
 	}
 	if exist {
-		return ExistErr
+		return ErrExist
 	}
 	return nil
 }

@@ -64,13 +64,15 @@ func (b *backup) Close(dataType string, t int64) error {
 
 }
 
+var blank = []byte("\n")
+
 func (b *backup) Save(data data.Data) error {
 	c, err := b.getChannel(data)
 	if err != nil {
 		return err
 	}
-	_, err = c.Write(data.Data)
-	log.Printf("write file success\n")
+	_, err = c.Write(append(data.Data, blank...))
+	//log.Printf("write file success\n")
 	return err
 }
 
@@ -81,9 +83,11 @@ func (b *backup) getChannel(d data.Data) (filechannel.WriteChannel, error) {
 	}
 	if wc, ok := b.writers[d.DataType]; ok {
 		if wc.FileName() != fn {
+			log.Printf("task:%s type: %s change name from %s to %s\n", b.task.Name, d.DataType, wc.FileName(), fn)
 			_ = wc.Close()
 			delete(b.writers, d.DataType)
 		} else {
+
 			return wc, nil
 		}
 	}
@@ -98,7 +102,8 @@ func (b *backup) getChannel(d data.Data) (filechannel.WriteChannel, error) {
 		return nil, err
 	}
 	b.writers[d.DataType] = wc
-	log.Printf("get file channel success,filename: %s\n", wc.FileName())
+	log.Printf("task:%s type: %s new name %s\n", b.task.Name, d.DataType, fn)
+	//log.Printf("get file channel success,filename: %s\n", wc.FileName())
 	return wc, nil
 }
 

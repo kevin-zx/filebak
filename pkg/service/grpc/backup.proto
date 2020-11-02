@@ -30,9 +30,20 @@ message CloseResponse {
     Error err = 1;
 }
 
+message DestroyRequest {
+    string TaskName = 1;
+    string TypeName = 2;
+    int64 Time = 3;
+}
+
+message DestroyResponse{
+    Error err = 1;
+}
+
 service BackupService {
     rpc SaveData (stream SaveRequest) returns (SaveResponse) {
     }
     rpc CloseType (CloseRequest) returns (CloseResponse) {
     }
+    rpc Destroy(DestroyRequest) returns (DestroyResponse){}
 }
